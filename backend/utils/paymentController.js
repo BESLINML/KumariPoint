@@ -97,6 +97,7 @@ const createOrder = async (req, res) => {
 const getPricing = async (_req, res) => {
   try {
     const settings = await loadBillingSettings(pool);
+    const listingAmounts = getChargeBreakdown(settings);
     const plans = [15, 30].map((days) => {
       const baseAmount = Number(days === 15 ? settings.advertisement15DayAmount : settings.advertisement30DayAmount);
       const amounts = getChargeBreakdown({ ...settings, baseAmount });
@@ -107,7 +108,16 @@ const getPricing = async (_req, res) => {
         totalAmount: amounts.totalPaise / 100,
       };
     });
-    res.json({ advertisementPlans: plans, gstRate: Number(settings.gstRate || 0) });
+    res.json({
+      listingPlan: {
+        period: 'annual',
+        baseAmount: listingAmounts.basePaise / 100,
+        gstAmount: listingAmounts.taxPaise / 100,
+        totalAmount: listingAmounts.totalPaise / 100,
+      },
+      advertisementPlans: plans,
+      gstRate: Number(settings.gstRate || 0),
+    });
   } catch (error) {
     console.error('Could not load payment pricing:', error.message);
     res.status(500).json({ error: 'Could not load current advertisement prices.' });
@@ -138,10 +148,28 @@ const notifyPaymentFailure = async (req, res) => {
 
 const sendFailureNoticeForVerifiedPayment = async (orderId, payment) => {
   const paymentId = payment.id;
-  const order = (await pool.query(
+  let order = (await pool.query(
     'SELECT customer, settings FROM billing_orders WHERE "orderId"=$1', [orderId],
   )).rows[0];
-  if (!order?.customer?.email) return { status: 404, error: 'Listing order was not found.' };
+  let isAdvertisement = false;
+  let purchaseDescription = 'business listing';
+  if (!order) {
+    const advertisementOrder = (await pool.query(
+      'SELECT details, settings, "durationDays", "expectedAmountPaise", "baseAmountPaise" FROM advertisement_orders WHERE "orderId"=$1', [orderId],
+    )).rows[0];
+    if (advertisementOrder) {
+      order = {
+        customer: advertisementOrder.details,
+        settings: advertisementOrder.settings,
+        durationDays: advertisementOrder.durationDays,
+        expectedAmountPaise: advertisementOrder.expectedAmountPaise,
+        baseAmountPaise: advertisementOrder.baseAmountPaise,
+      };
+      isAdvertisement = true;
+      purchaseDescription = `advertisement placement (${order.durationDays} days)`;
+    }
+  }
+  if (!order?.customer?.email) return { status: 404, error: 'Payment order was not found.' };
   if (payment.order_id !== orderId || payment.status !== 'failed') {
     return { status: 409, error: 'Razorpay has not confirmed a failed payment for this order.' };
   }
@@ -157,13 +185,24 @@ const sendFailureNoticeForVerifiedPayment = async (orderId, payment) => {
   if (!claim.rowCount) return { notified: false, alreadyNotified: true };
 
   try {
+    const taxBreakdown = isAdvertisement
+      ? getChargeBreakdown({
+        ...(order.settings || {}),
+        gstRate: order.settings?.gstRate || 0,
+        baseAmount: Number(order.baseAmountPaise || order.expectedAmountPaise) / 100,
+      })
+      : getChargeBreakdown(order.settings);
     const notified = await sendBusinessPaymentFailureNotice({
-      ...order.customer,
+      email: order.customer.email,
+      ownerName: order.customer.ownerName,
+      businessName: isAdvertisement ? order.customer.companyName : order.customer.businessName,
       paymentId,
       amount: Number(payment.amount || 0) / 100,
       failureReason: payment.error_description || payment.error_reason || payment.error_code || '',
       billingSettings: order.settings,
-      taxBreakdown: getChargeBreakdown(order.settings),
+      taxBreakdown,
+      purchaseDescription,
+      isAdvertisement,
     });
     if (!notified) {
       await pool.query('DELETE FROM payment_notifications WHERE "paymentId"=$1', [paymentId]);

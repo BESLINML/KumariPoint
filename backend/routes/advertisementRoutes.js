@@ -27,7 +27,7 @@ router.get('/eligibility', async (req, res) => {
       return res.status(400).json({ error: 'Business name and listing phone number are required.' });
     }
     const eligible = await findRegisteredBusiness(businessName, phone);
-    return res.json({ eligible, error: eligible ? undefined : 'Only businesses already listed on KumariHub can advertise. Use the same business name and phone number as your listing.' });
+    return res.json({ eligible, error: eligible ? undefined : 'Only businesses already listed on KumariPoint can advertise. Use the same business name and phone number as your listing.' });
   } catch (error) {
     return res.status(500).json({ error: 'Could not verify the business listing.' });
   }
@@ -50,7 +50,7 @@ router.post('/', async (req, res, next) => {
   try {
     const { companyName, phone } = req.body || {};
     if (!companyName || !phone || !(await findRegisteredBusiness(companyName, phone))) {
-      return res.status(403).json({ error: 'Only businesses already listed on KumariHub can advertise. Use the same business name and phone number as your listing.' });
+      return res.status(403).json({ error: 'Only businesses already listed on KumariPoint can advertise. Use the same business name and phone number as your listing.' });
     }
     return next();
   } catch (error) {

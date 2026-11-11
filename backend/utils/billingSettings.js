@@ -3,9 +3,9 @@ const DEFAULT_BILLING_SETTINGS = Object.freeze({
   advertisement15DayAmount: 299,
   advertisement30DayAmount: 499,
   gstRate: 0,
-  sellerName: 'KumariHub',
+  sellerName: 'KumariPoint',
   sellerGstin: '',
-  invoiceMessage: 'Thank you for listing your business with KumariHub.',
+  invoiceMessage: 'Thank you for listing your business with KumariPoint.',
   paymentFailureMessage: 'Please retry the payment. If you were charged, contact us with your payment reference.',
 });
 
@@ -17,7 +17,12 @@ const getChargeBreakdown = (settings) => {
 
 async function loadBillingSettings(pool) {
   const result = await pool.query('SELECT settings FROM billing_settings WHERE id=1');
-  return { ...DEFAULT_BILLING_SETTINGS, ...(result.rows[0]?.settings || {}) };
+  const settings = { ...DEFAULT_BILLING_SETTINGS, ...(result.rows[0]?.settings || {}) };
+  if (settings.sellerName === 'KumariHub') settings.sellerName = DEFAULT_BILLING_SETTINGS.sellerName;
+  if (settings.invoiceMessage === 'Thank you for listing your business with KumariHub.') {
+    settings.invoiceMessage = DEFAULT_BILLING_SETTINGS.invoiceMessage;
+  }
+  return settings;
 }
 
 function validateBillingSettings(input) {

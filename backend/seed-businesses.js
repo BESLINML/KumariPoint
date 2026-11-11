@@ -44,8 +44,8 @@ async function seed() {
       await client.query(
         `INSERT INTO businesses
           ("ownerName", "businessName", category, address, location, phone, whatsapp,
-           services, "aboutBusness", img, timing, status, premium, "expiryDate")
-         VALUES ($1, $2, $3, $4, $5, $6, $6, $7::jsonb, $8, $9, $10::jsonb, 'active', FALSE, NOW() + INTERVAL '1 year')`,
+           services, "aboutBusness", img, timing, status, "expiryDate")
+         VALUES ($1, $2, $3, $4, $5, $6, $6, $7::jsonb, $8, $9, $10::jsonb, 'active', NOW() + INTERVAL '1 year')`,
         [business.ownerName, business.businessName, business.category, business.address,
           business.location, business.phone, JSON.stringify(business.services),
           business.aboutBusness, business.img,

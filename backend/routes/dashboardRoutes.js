@@ -54,7 +54,7 @@ router.post('/billing-settings/preview', (req, res) => {
       totalAmount: amounts.totalPaise / 100,
       message: settings.invoiceMessage,
     });
-    res.type('application/pdf').set('Content-Disposition', 'inline; filename="KumariHub-Invoice-Demo.pdf"').send(pdf);
+    res.type('application/pdf').set('Content-Disposition', 'inline; filename="KumariPoint-Invoice-Demo.pdf"').send(pdf);
   } catch (error) {
     res.status(500).json({ error: 'Could not create the invoice PDF preview.' });
   }
@@ -74,5 +74,32 @@ router.put('/billing-settings', async (req, res) => {
     res.status(500).json({ error: 'Could not save billing settings.' });
   }
 });
-router.get('/dashboard-stats',async(req,res)=>{try{const params=[];let where='';if(req.query.startDate&&req.query.endDate){params.push(req.query.startDate,new Date(new Date(req.query.endDate).setHours(23,59,59,999)));where='WHERE "createdAt">=$1 AND "createdAt"<=$2';}const all=(await pool.query(`SELECT * FROM businesses ${where}`,params)).rows.map(camelize);const now=new Date(),today=new Date();today.setHours(0,0,0,0);const nextWeek=new Date(today);nextWeek.setDate(nextWeek.getDate()+7);nextWeek.setHours(23,59,59,999);const activePremium=all.filter(b=>b.premium&&b.status==='active');res.json({totalBusinesses:all.length,todaysListings:all.filter(b=>new Date(b.createdAt)>=today).length,upcomingRenewals:all.filter(b=>b.status==='active'&&new Date(b.expiryDate)>=today&&new Date(b.expiryDate)<=nextWeek),expiredListings:all.filter(b=>b.status==='expired'||new Date(b.expiryDate)<now),inactiveListings:all.filter(b=>b.status==='inactive').length,categories:Number((await pool.query('SELECT COUNT(*) FROM categories')).rows[0].count),locations:Number((await pool.query('SELECT COUNT(*) FROM locations')).rows[0].count),revenue:activePremium.reduce((sum,b)=>sum+(b.price||500),0),premiumList:all.filter(b=>b.premium),nonPremiumList:all.filter(b=>!b.premium)});}catch(e){res.status(500).json({error:e.message});}});
+router.get('/dashboard-stats', async (req, res) => {
+  try {
+    const params = [];
+    let where = '';
+    if (req.query.startDate && req.query.endDate) {
+      params.push(req.query.startDate, new Date(new Date(req.query.endDate).setHours(23, 59, 59, 999)));
+      where = 'WHERE "createdAt">=$1 AND "createdAt"<=$2';
+    }
+    const all = (await pool.query(`SELECT * FROM businesses ${where}`, params)).rows.map(camelize);
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(23, 59, 59, 999);
+    res.json({
+      totalBusinesses: all.length,
+      todaysListings: all.filter((business) => new Date(business.createdAt) >= today).length,
+      upcomingRenewals: all.filter((business) => business.status === 'active' && new Date(business.expiryDate) >= today && new Date(business.expiryDate) <= nextWeek),
+      expiredListings: all.filter((business) => business.status === 'expired' || new Date(business.expiryDate) < now),
+      inactiveListings: all.filter((business) => business.status === 'inactive').length,
+      categories: Number((await pool.query('SELECT COUNT(*) FROM categories')).rows[0].count),
+      locations: Number((await pool.query('SELECT COUNT(*) FROM locations')).rows[0].count),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 module.exports=router;

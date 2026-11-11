@@ -20,7 +20,7 @@ app.use('/api/admin', require('./routes/dashboardRoutes'));
 app.post('/api/create-order', paymentController.createOrder);
 app.get('/api/pricing', paymentController.getPricing);
 app.post('/api/payment-failed', paymentController.notifyPaymentFailure);
-app.get('/', (_req, res) => res.send('KumariHub Backend Server is running smoothly!'));
+app.get('/', (_req, res) => res.send('KumariPoint Backend Server is running smoothly!'));
 
 const cleanExpiredRecords = async () => {
   try {

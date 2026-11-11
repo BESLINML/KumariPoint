@@ -21,8 +21,8 @@ async function saveBusinessFromOrder(order, paymentId) {
   const inserted = await pool.query(
     `INSERT INTO businesses
       ("ownerName", email, "businessName", category, address, location, phone, whatsapp, services,
-       "aboutBusness", img, timing, "locationLink", delivery, status, premium, "expiryDate", "paymentId")
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12::jsonb,$13,$14,'pending',FALSE,$15,$16)
+       "aboutBusness", img, timing, "locationLink", delivery, status, "expiryDate", "paymentId")
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12::jsonb,$13,$14,'pending',$15,$16)
      ON CONFLICT ("paymentId") WHERE "paymentId" IS NOT NULL DO NOTHING
      RETURNING *`, values,
   );

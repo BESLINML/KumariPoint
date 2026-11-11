@@ -40,7 +40,7 @@ function createInvoicePdf({ sellerName, sellerGstin, issueDate, ownerName, email
     commands = [];
     pages.push(commands);
     y = 68;
-    text('KUMARIHUB  |  PAYMENT RECEIPT', 42, 42, 9, 'F2', color(0.20, 0.36, 0.29));
+    text('KUMARIPOINT  |  PAYMENT RECEIPT', 42, 42, 9, 'F2', color(0.20, 0.36, 0.29));
   };
   const ensureSpace = (height) => {
     if (y + height < PAGE_HEIGHT - 55) return;
@@ -63,7 +63,7 @@ function createInvoicePdf({ sellerName, sellerGstin, issueDate, ownerName, email
   rect(0, 0, PAGE_WIDTH, 150, color(0.10, 0.18, 0.15));
   rect(42, 34, 34, 34, color(0.82, 0.67, 0.28));
   text('K', 53, 57, 19, 'F2', color(0.10, 0.18, 0.15));
-  text(sellerName || 'KumariHub', 88, 49, 19, 'F2', color(1, 1, 1));
+  text(sellerName || 'KumariPoint', 88, 49, 19, 'F2', color(1, 1, 1));
   text(sellerGstin ? `GSTIN: ${sellerGstin}` : 'Business listing payment', 88, 68, 9, 'F1', color(0.82, 0.86, 0.83));
   text(gstRate > 0 ? 'PAYMENT TAX INVOICE' : 'PAYMENT RECEIPT', 42, 111, 18, 'F2', color(1, 1, 1));
   text(`ISSUED ${issueDate || ''}`, 42, 130, 9, 'F1', color(0.82, 0.86, 0.83));
